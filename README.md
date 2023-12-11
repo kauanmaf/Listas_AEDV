@@ -1,7 +1,7 @@
 # Listas_AEDV
 Listas desenvolvidas na segunda parte do semestre da disciplina de **Análise Exploratória de dados e visualização**  
 
-Consistem em 2 listas, as quais se baseiam principalmente no livro escrito por Kieran Healy "Data Visualization: A Practical Introduction" 
+Consistem em 2 listas, as quais se baseiam principalmente no livro escrito por Kieran Healy "Data Visualization: A Practical Introduction" na qual se utiliza da biblioteca ggplot da linguagem R para a elaboração de gráficos.
 
 ## Lista 1
 A primeira lista consiste em 3 partes
