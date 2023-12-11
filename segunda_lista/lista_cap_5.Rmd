@@ -1,0 +1,403 @@
+---
+title: "Capítulo 5"
+output: 
+  html_document:
+    number_sections: yes
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+
+```{r warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(gapminder)
+library(socviz)
+
+```
+
+# Usando o operador pipe
+Muitas das vezes necessitamos realizar uma série de operações sucessivas com o nosso dado. Atribuir uma variável para cada uma dessas operações, pode se tornar inviável
+Para isso, o tideverse nos oferece um operador muito útil, o operador pipe (%>%).
+Essa série de caracteres nos mostra que o que foi feito anteriormente deve ser entendido como primeiro argumento do próximo comando.
+
+```{r warning=FALSE}
+rel_por_religiao <- gss_sm %>% 
+  group_by(bigregion, religion) %>% 
+  summarize(N = n()) %>% 
+  mutate(freq = N / sum(N), pct = round(freq*100), 0)
+rel_por_religiao
+```
+
+Neste caso por exemplo, pegamos a nossa base de dados, a partir dela, agrupamos por regiões e por religião, criamos uma nova coluna com a frequência de cada classe, e depois criamos mais duas coluna, uma com a frequência relativa de cada ocorrência, e por fim uma coluna com a porcentagem.
+
+# Invertendo os eixos
+Utilizando as tabela que acabamos de fazer, podemos tentar realizar os mesmos gráficos feitos no capítulo 4, na qual agrupamos por região e por religião. No entanto, agora que temos os dados manipulados do jeito que queremos, trabalhar com esses dados será mais fácil.
+
+```{r}
+q_1 <- ggplot(rel_por_religiao, aes(x = bigregion, y = pct, fill = religion))
+q_1 + geom_col(position = "dodge2") +
+  labs(x = "Region", y = "Percent", fill = "Religion") +
+  theme(legend.position = "top") + theme_bw()
+```
+
+Note que esse gráfico está muito legal, no entanto podemos melhora-lo ainda mais. Quando plotamos todos no mesmo gráfico, não conseguimos identificar o que é o que. Assim, dividir esses gráficos em outros, fará o nosso gráfico ficar melhor. Podemos tentar inverter o nosso gráfico, para assim fazer um gráfico de barras e tornar a compreensão ainda mais fácil, pois assim não precisaremos de legendas.
+```{r}
+cores <- c("#2fc258", "#e8e490", "#f07360", "#5c3d5b", "#bf2a7f", "yellow")
+cores_x4 <- c(cores, cores, cores, cores)
+q_2 <- ggplot(rel_por_religiao, aes(x = religion, y = pct, fill = religion))
+q_2 + geom_col(position = "dodge2", 
+               fill = cores_x4) +
+  labs(x= NULL, y = "Percent", fill = "Religion") +
+  guides(fill = "none") +
+  coord_flip() +
+  facet_grid(~ bigregion) +
+  theme_bw() +   
+  theme(strip.background = element_rect(fill ="#03396c"),
+        strip.text = element_text(color = "white"),
+        panel.border = element_rect(color = "#03396c", fill = NA),
+        panel.grid = element_blank())
+```
+
+# Variáveis continuas por grupo ou categoria
+Vamos agora utilizar a tabela do Organdata. e fazer alguns plots para entender o dado. Primeiro vamos plotar como que foi a distribuição das doações por ano. Cada ponto no gráfico representa um país.
+```{r warning=FALSE}
+q_2 <- ggplot(organdata, aes(x = year, y = donors))
+q_2 + 
+  geom_point() + 
+  theme_bw() +
+  labs(x = "Years",
+       y = "Doadores") +
+  theme(panel.grid = element_blank())
+```
+
+Vamos agora dividir por país.
+```{r warning=FALSE}
+q_2 + geom_line(aes(group = country), color= "#03396c") + 
+  facet_wrap(~country) +
+  theme_bw() +
+  labs(x = "Years",
+       y = "Doadores") +
+  theme(axis.text.x = element_text(size = 5),
+        panel.grid = element_blank(),
+        strip.background = element_rect(fill ="#03396c"),
+        strip.text = element_text(color = "white"),
+        panel.border = element_rect(color = "#03396c", fill = NA))
+  
+```
+
+Note que um gráfico de linhas é legal, e nos dá uma ideia de como o número de doadores está se comportando ao longo do tempo. No entanto esta não é a única forma de representar os dados. Uma outra maneira é por meio de um box plot. Vamos gira-lo para que possamos escapara da sobreposição de nomes nos países
+```{r warning=FALSE}
+q_3 <- ggplot(data = organdata, aes(x = country, y = donors))
+q_3 + 
+  geom_boxplot() + 
+  coord_flip() + 
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(y = "Doadores", x= "Países")
+
+```
+
+No entando o gráfico está feio, pois não temos nenhuma ordem para como ele está disposto. para melhorar isso, usaremos a função reorder, e adicionaremos algumas cores
+```{r warning=FALSE}
+q_4 <- ggplot(data = organdata, 
+              aes(x = reorder(country, 
+                              donors, 
+                              na.rm = TRUE), 
+                  y = donors, 
+                  fill = world))
+q_4 + 
+  geom_boxplot() + 
+  labs(x=NULL) + 
+  theme_bw() +
+  coord_flip() + 
+  theme(legend.position = "top",
+        panel.grid = element_blank()) +
+  labs(y = "Doadores", 
+       x = "Países") +
+  scale_fill_manual(values = c("#b6d89c", "#b83564", "#ffb350", "#d41e45"))
+  
+```
+
+Além de boxplots, podemos até mesmo utilizar pontos para mostrar essa mesma informação
+```{r warning=FALSE}
+q_5 <- ggplot(organdata, 
+              aes(x = reorder(country, donors, na.rm = TRUE), 
+                  y = donors, color = world))
+q_5 + 
+  geom_point() + 
+  theme_bw() + 
+  theme(panel.grid = element_blank(),
+        legend.position = "top") + 
+  labs(x = NULL) + 
+  labs(y = "Doadores", 
+       x = "Países") +
+  scale_color_manual(values = c("#b6d89c", "#d41e45", "#ffb350")) +
+  coord_flip() 
+  
+
+  
+```
+
+No entanto há algumas sobreposições de pontos, assim podemos utilizar o geom_jitter para realizar essa tarefa de impedir a sobreposição
+```{r warning=FALSE}
+q_5 + 
+  geom_jitter(position = position_jitter(width = 0.15)) + 
+  theme_bw() + 
+  theme(legend.position = "top",
+        panel.grid = element_blank()) + 
+  labs(x = NULL) +
+  scale_color_manual(values = c("#b6d89c", "#d41e45", "#ffb350")) +
+  labs(y = "Doadores", 
+       x = "Países") +
+  coord_flip() 
+```
+
+Vamos agora organizar os dados para trabalharmos com a média de cada coisa.
+Vamos utilizar a deployer, junto com o operador pipe para realizar isso com poucos comandos
+
+```{r}
+por_pais <- organdata %>% group_by(consent_law, country) %>% 
+  summarize_if(is.numeric, list(mean = mean, sd = sd), na.rm = TRUE) %>% 
+  ungroup()
+tibble(por_pais)
+```
+
+A partir da tabela feita, podemos plotar o gráfico da média de doadores por país. Podemos fazer isso de dois jeitos:
+O primeiro é separando com cores cada um dos tipos de leis
+```{r}
+p_6 <- ggplot(por_pais, aes(x = reorder(country, donors_mean), y = donors_mean, color = consent_law))
+p_6 + 
+  geom_point() + 
+  labs(y = "Doadores", 
+       x = "Países") +
+  coord_flip() +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+  
+```
+
+O segundo é usando o facet_wrap
+```{r}
+p_7 <- ggplot(por_pais, 
+              aes(x = donors_mean, 
+                  y = reorder(country, donors_mean)))
+p_7 + geom_point(size = 3, color = "#03396c") +
+  facet_wrap(~consent_law, 
+             scales= "free_y", 
+             ncol = 1) +
+  labs(x = "Doações",
+       y = "") +
+  theme_bw() +
+  theme(panel.grid = element_blank(),
+        strip.background = element_rect(fill ="#03396c"),
+        strip.text = element_text(color = "white")) 
+```
+
+De modo a incluir mais informações de variância ou desvio padrão, podemos utilizar o mesmo gráfico anterior, mas ao invés de geom_point, devemos utilizar a função geom_pointrange.
+```{r}
+q_6 <- ggplot(por_pais, aes(x = reorder(country, donors_mean), y = donors_mean)) 
+q_6 + 
+  geom_pointrange(aes(ymin = donors_mean - donors_sd, 
+                      ymax = donors_mean + donors_sd)) + 
+  labs(x = "", 
+       y = "Taxa de doadores") + 
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  coord_flip()
+```
+
+# Plotando textos
+Vamos aprender a como plotar textos no R
+```{r}
+q_7 <- ggplot(por_pais, aes(x = roads_mean, y = donors_mean))
+q_7 + 
+  geom_point() + 
+  geom_text(aes(label = country)) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+```
+
+Desse jeito os nomes ficam todos em cima. Para melhorar podemos adicionar os termos hjust na variável do geom_text para assim melhorar a nossa visualização.
+```{r}
+q_7 <- ggplot(por_pais, aes(x = roads_mean, y = donors_mean))
+q_7 + 
+  geom_point() + 
+  geom_text(aes(label =country), hjust = -0.1) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+```
+
+## Usando ggrepel
+
+Muitas das vezes apenas mudar o texto para um lado ou para o outro não é o suficiente, então, utilizamos uma library chamada ggrepel, para plotar texto. Nela há um um comando chamado geom_text_repel, para plotar os textos de modo a não soprepor um ao outro
+```{r}
+library(ggrepel)
+elections_historic %>% select(2:7)
+```
+```{r}
+p.title <- "Eleições Presidenciais: Taxa de votação Popular e de colégios conquistados"
+p.subtitle <- "1824-1816"
+p.caption <- "Dados de 2016 são estimativas"
+x_label <- "Porcentagem de voto popular do ganhador"
+y_label <- "Porcentagem de colégios eleitorais conquistados"
+```
+
+Agora, com as variáveis já escolhidas, basta plotarmos 
+```{r warning=FALSE}
+
+q_8 <- ggplot(elections_historic, 
+              aes(x = popular_pct, 
+                  y = ec_pct, 
+                  label = winner_label))
+q_8 + 
+  geom_hline(yintercept = 0.5, linewidth = 1.4, color = "gray80") + 
+  geom_vline(xintercept = 0.5, linewidth = 1.4, color = "gray80") + 
+  geom_point() +
+  geom_text_repel(size = 3) +
+  scale_x_continuous(labels = scales:: percent) +
+  scale_y_continuous(labels = scales:: percent) +
+  labs(x = x_label, 
+       y=y_label, 
+       title = p.title, 
+       subtitle = p.subtitle, 
+       caption = p.caption) +
+  theme_bw() +
+  theme(panel.grid = element_blank())
+```
+
+# Destacando os outliers
+Podemos destacar apenas os dados que queremos adicionando um subset no geom_text_repel
+
+```{r}
+q_9 <- ggplot(por_pais, aes(x = gdp_mean, y= health_mean))
+q_9 + 
+  geom_point() +
+  geom_text_repel(data = subset(por_pais, 
+                                gdp_mean >25000 | health_mean < 1500 | country %in% "Belgium"), 
+                  aes(label = country)) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "Média de PIB per Capita",
+       y = "Média de Saúde")
+```
+
+```{r warning=FALSE}
+organdata$ind <- organdata$ccode %in% c("Ita", "Spa") & organdata$year > 1998
+
+q_10 <- ggplot(data = organdata, 
+               mapping = aes( x = roads, 
+                              y = donors, 
+                              color = ind))
+q_10 + geom_point() +
+  geom_text_repel(data = subset(organdata, ind), 
+                  mapping = aes(label = ccode)) +
+  guides(label = "none", color = "none") +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+```
+
+# Escrevendo e desenhando no gráfico
+Podemos usar a função annotate para escrever no nosso gráfico
+
+```{r warning=FALSE}
+q_11 <- ggplot(organdata, aes(x=roads, y = donors))
+q_11 + 
+  geom_point() +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  annotate(geom = "text", x = 91, y=33,
+           label = "Uma taxa de recuperação \n surpreendentemente alta", 
+           hjust = 0) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+  
+```
+Podemos adicionar mais do que texto e adicionar retângulos/linhas/segmentos/flechas 
+```{r warning=FALSE}
+q_11 + 
+  geom_point(color = "darkgreen") +
+  annotate(geom = "rect", xmin = 125, xmax =155,
+           ymin = 30, ymax=35, fill = "darkblue", 
+           alpha = 0.2) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  annotate(geom = "text", x = 75, y=33,
+           label = "Uma taxa de recuperação \n surpreendentemente alta", 
+           hjust = 0 ) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+  
+
+```
+
+# Escalas, legendas e temas
+Podemos ficar um pouco perdidos no ggplot pois temos varias maneiras de mexer com o gráfico. Estas maneiras são por meio das escalas, legendas e temas.
+Vamos entender como trabalhar com esses tipos variáveis no gráfico.
+
+## Mudando as coisas com scales
+Podemos mudar as coisas que aparecem no scales com base na função scale. Basta inserirmos onde queremos que a função quebre e qual alegenda que querermos naquele lugar.
+```{r warning=FALSE}
+q_12 <- ggplot(organdata, mapping = aes(x = roads, 
+                                        y=donors,
+                                        color = world))
+q_12 + 
+  geom_point() + 
+  scale_x_log10() + 
+  scale_y_continuous(breaks = c(5,15,25), 
+                     labels = c("Five", 
+                                "Fifteen", 
+                                "Twenty Five")) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  scale_color_manual(values = c("#87CEEB", "#32CD32", "#FFA500")) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+  
+```
+
+Podemos mudar o que está escrito nos guides com a função scale também
+```{r warning=FALSE}
+q_12 + 
+  geom_point() +
+  scale_color_discrete(labels = c("Corporatist",
+                                  "Liberal", 
+                                  "Social Democracit",
+                                  "Unclassified")) + 
+  labs(x = "Road Deaths",
+       y= "Donor Procurement", 
+     color = "Walfare State") +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  scale_color_manual(values = c("#87CEEB", "#32CD32", "#FFA500")) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+  
+```
+## Tirando as legendas do gráfico
+Podemos tirar as legendas por meio da função guides(nome_dado_no_aesthetic = FALSE), podemos usar de exemplo o caso anterior
+```{r warning=FALSE}
+q_12 + 
+  geom_point() +
+  labs(x = "Road Deaths", 
+       y = "Donor Procurement") +
+  guides(color = FALSE) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  scale_color_manual(values = c("#87CEEB", "#32CD32", "#FFA500")) +
+  labs(x = "Mortes em Estradas ", 
+       y = "Doadores")
+
+```
+

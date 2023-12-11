@@ -1,0 +1,128 @@
+---
+title: "Parte C"
+output: html_document
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message=FALSE, warnings=FALSE)
+```
+
+Vamos começar abrindo as bibliotecaas necessárias, além de baixar os dados do github do gráfico
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(lubridate)
+library(ggmap)
+library(ggrepel)
+library(gridExtra)
+library(pander)
+#Há uma sobreposição de funções, mas como não iremos utiliza-las, vamos ignorar
+```
+
+É importante, para o próximo passo setar o seu workingspace para que os arquivos sejam lidos corretamente
+
+Vamos atribuir os dados em algumas variáveis, para ser mais fácil trabalhar com elas depois
+
+```{r}
+setwd("C:/Users/kauan/OneDrive - Fundacao Getulio Vargas - FGV/Matérias/AEDV/Lista_segundo_semestre")
+cities <- read.table("fancy-minard-master/input/minard/cities.txt", 
+                     header = TRUE, 
+                     stringsAsFactors = FALSE)
+troops <- read.table("fancy-minard-master/input/minard/troops.txt", 
+                     header = TRUE, 
+                     stringsAsFactors = FALSE) 
+
+temps <- read.table("fancy-minard-master/input/minard/temps.txt",
+                    header = TRUE, stringsAsFactors = FALSE) %>%
+  mutate(date = dmy(date))
+troops %>% head() %>% pandoc.table()
+```
+
+Vamos agora plotar o gráfico de acordo com a latitude pela distância.
+
+```{r}
+ggplot(data = troops, mapping = aes(x = long, y = lat, group = group)) + geom_path()
+```
+
+temos já um gráfico bem decente sobre como foi o caminho dessas tropas, no entanto, podemos enriquece-lo ainda mais, adicionando como variáveis a direção:
+
+```{r}
+ggplot(data = troops, mapping = aes(x = long, y = lat, 
+                                    group = group, color=direction, linewidth = survivors)) + geom_path(lineend = "round")
+
+```
+
+Agora que ja temos nosso gráfico vamos adicionar algumas modificações para deixa-lo ainda mais parecido com o gráfico do minard
+
+```{r}
+graf_1 <- ggplot(data = troops, mapping = aes(x = long, y = lat, group = group, color=direction, linewidth = survivors)) + 
+  geom_path(lineend = "round") +
+  scale_size(range = c(0.5,5)) + 
+  scale_color_manual(values = c("#DFC17E", "#252523")) +
+  labs(x = NULL, y = NULL) +
+  guides(color = "none")
+graf_1
+```
+
+Vamos adicionar mais camadas agora, com o nome das cidades. Para garantir que as frases fiquem espaçadas corretamente, vamos utilizar o geom_text_repel.
+
+```{r}
+ggplot() + 
+  geom_path(data = troops, 
+            mapping = aes(x = long, 
+                          y = lat, 
+                          group = group, 
+                          color=direction, 
+                          linewidth = survivors, 
+                          ), lineend = "round") +
+  geom_point(data = cities, mapping = aes(x = long, y = lat)) +
+  geom_text_repel(data = cities, mapping = aes(x = long, y = lat, label = city), color = "red", family = "sans") +
+  scale_size(range = c(0.5,5)) + 
+  scale_color_manual(values = c("#DFC17E", "#252523")) +
+  labs(x = NULL, y = NULL) +
+  guides(color = "none")
+```
+
+Vamos dar o próximo passo em nossa visualizção que será colocar o fundo de um mapa atrás de nosso gráfico. Para isso usaremos a biblioteca do ggmap.
+
+```{r}
+march.1812.europe <- c(left = 20.039, top = 56.656, right = 39.507, bottom = 52.324)
+
+march.1812.europe.map <- get_stamenmap(bbox = march.1812.europe, zoom = 5, maptype = "toner-background", where = "cache")
+ggmap(march.1812.europe.map)
+
+```
+
+Para melhorar nossa visualização vamos juntar o gráfico do minard com o fundo de mapa, pois assim vamos ter uma visualização ainda melhor e mais precisa dos nossos dados. Vamos retirar as legendas, e adicionar um título para dar uma referência para nosso gráfico.
+
+```{r warning=FALSE}
+march.1812.plot <- ggmap(march.1812.europe.map) +
+  geom_path(data = troops, 
+            mapping = aes(x = long, 
+                          y = lat, 
+                          group = group, 
+                          color = direction, 
+                          linewidth = survivors), 
+            lineend = "round") +
+  scale_color_manual(values = c("#08995B", "#A900E6")) +
+  geom_point(data = cities, mapping = aes(x = long, y = lat)) +
+  geom_text_repel(data = cities, mapping = aes(x = long, y = lat, label = city), color = "black", family = "sans") +
+  scale_size(range = c(0.5,4)) +
+  guides(color = "none", size = "none") +
+  labs(title = "Marcha das tropas de Napoleão à Russia", 
+       subtitle = "Este gráfico mostra como a grande armada de Napoleão foi quase 
+       exterminada em sua tentativa de invadir a Rússia") +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text = element_blank(), 
+        axis.title = element_blank(),
+        plot.background = element_rect(fill = "white"))
+march.1812.plot
+```
+
+Temos assim um mapa com as fronteiras atuais de como se deu a invasão de Napoleão a Russia, bem como os nomes das cidades que existiam na época e sua respectiva localização no mapa.
+
+
+

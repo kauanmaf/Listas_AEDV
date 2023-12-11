@@ -1,0 +1,224 @@
+---
+title: "Lista 4"
+output: 
+  html_document:
+    number_sections: yes
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(dplyr)
+library(gapminder)
+library(socviz)
+
+```
+
+A maneira com a qual decidi seguir com esse trabalho, foi realizar todos os gráficos, fazendo modificações pequenas, tais como adicionar um tema, e nos "mais importantes" - os que sumarizam a maior parte do conteúdo - decidi realizar modificações maiores, tais como mudar as cores.
+
+# Agrupando os dados
+Muitas das vezes, precisamos entender melhor como o R funciona para conseguirmos fazer exatamente o que queremos. 
+No exemplo a seguir, tentamos realizar uma plot do gráfico de linhas para cada país em relação ao ano. No entanto, o output não é o gráfico que desejamos. Veja a seguir:
+```{r}
+p <- ggplot(data = gapminder, mapping = aes(x = year, y = gdpPercap))
+p + geom_line() + theme_bw()
+```
+
+Isso ocorreu pois apenas pedimos para o R separar por anos, e não por países, assim como gostariamos. Assim, devemos explicar explicitamente o que queremos para plotarmos o gráfico certo. Podemos especificar, dizendo para dividir cada ano por país. 
+```{r}
+p + geom_line(aes(group = country)) + theme_bw()
+```
+
+# Facetando o gráfico
+De forma a melhorar nossa visualização, podemos dividir o nosso gráfico por continentes. Para isso, adicionaremos a função facet
+```{r}
+p + geom_line(aes(group = country)) + facet_wrap(~continent, ncol = 3) + theme_bw()
+```
+
+Podemos ver que há uma série de países concentrados. Para melhorar ainda mais nossa visualização, vamos transformar nosso eixo y em uma escala logarítimica, mudar um pouco as cores do nosso gráfico, e destacar a média dos países. Temos assim:
+```{r}
+p + geom_line(color = "#81FC8F", aes(group = country)) +
+  geom_smooth(linewidth = 1.1, 
+              method = "loess", 
+              se = FALSE, 
+              color = "#407D47") +
+  scale_y_log10(labels=scales::dollar) +
+  facet_wrap(~continent, ncol = 5) +
+  theme_bw() +
+  theme(panel.border = element_rect(color = "#2D5042", fill = NA),
+        strip.background = element_rect(fill ="#2D5042"),
+        strip.text = element_text(color = "white"))+
+  labs( x = "Year",
+        y = "GDP per capita",
+        title = "GDP per capita in five continents")
+```
+
+# Facet Wrap com mais de uma variável
+
+Podemos utilizar a função facet_wrap para mais de uma variável, tal como no exemplo a seguir.
+```{r warning=FALSE}
+p_1 <- ggplot(data = gss_sm, mapping = aes(x= age, y = childs))
+p_1 + 
+  geom_point(alpha=0.2, color = "#b3cde0") +
+  geom_smooth(se = FALSE, color = "#005b96") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill ="#03396c"),
+        strip.text = element_text(color = "white")) +
+  facet_grid(sex ~ race)
+```
+
+# Como geoms transformam os dados
+
+Podemos fazer um gráfico de barras apenas chamando a função geom_bar
+```{r}
+p_2  <- ggplot(data = gss_sm, aes(x=bigregion))
+p_2 + 
+  geom_bar(fill = "#800080") + 
+  theme_bw()
+```
+
+Note que foi cirada uma variável para o eixo y, mesmo que não dissemos para o R fazer isso. Isso acontece pois a função geom_bar já tem como parte dela em contar o número de ocorrências de uma determinada classe.
+Vamos supor agora, que queremos a frequência relativa de determinadas classes. Para isso, é preciso adicionar uma variável em geom_bar.
+```{r}
+p_2 + geom_bar(aes(y = after_stat(prop)), fill = "#800080") + theme_bw()
+
+```
+
+Note que ele ainda não produziu o gráfico que queremos, pois queremos que a soma de todas as porcentagens seja 1, ou seja, que ele interprete cada coluna como parte de um todo e não como o todo. Para isso, vamos "adicionar" uma coluna apenas para ele entender que deve contar todos como um grupo apenas
+```{r}
+p_2 + geom_bar(aes(y = after_stat(prop), group = 1,), fill = "#800080") + theme_bw()
+
+```
+
+Podemos também querer colorir os retângulos de nossa figura. Isso deve ser feito com a variável fill, pois a variável colour vai nos gerar um output diferente do esperado.
+```{r}
+table(gss_sm$religion)
+cores <- c("#2fc258", "#e8e490", "#f07360", "#5c3d5b", "#bf2a7f", "yellow")
+p_3 <- ggplot(data = gss_sm, mapping = aes(x = religion, fill = religion))
+p_3 + geom_bar(fill = cores) + theme_bw()
+```
+
+Supondo agora que queremos saber como é a distribuição da religião por todas as regiões, percentualmente, podemos fazer isso com:
+```{r}
+p_4 <-  ggplot(data = gss_sm, 
+               mapping = aes(x = bigregion, 
+                             fill = religion))
+p_4 + 
+  geom_bar(position = "fill")
+  
+```
+
+Apesar de a visualização já nos entregar um ótimo dado, vamos supor que queremos esse mesmo dado, mas com as proporções uma do lado da outra. Do modo como os dados estão organizados apenas a função geom_bar não vai conseguir produzir esse tipo de gráfico. Vamos assim, facetar nosso gráfico por região e assim utilizar o geom_bar para plotar. Temos assim:
+```{r}
+cores_x4=c(cores, cores, cores, cores)
+p_5 <- ggplot(data = gss_sm, mapping = aes(x = religion))
+p_5 + geom_bar(fill = cores_x4, position = "dodge", 
+               mapping = aes(y = after_stat(prop), 
+                             group = bigregion)) + 
+  facet_wrap(~bigregion, ncol = 2) +
+  theme_bw() +
+  scale_y_continuous() +
+  theme(strip.background = element_rect(fill ="#03396c"),
+        strip.text = element_text(color = "white"),
+        panel.border = element_rect(color = "#03396c", fill = NA),
+        panel.grid = element_blank()) +
+  labs(x = "Religiões", y = "Proporção")
+```
+
+# Histogramas
+Quando queremos mostrar a distribuição de frequência de determinad objeto, podemos utilizar histogramas. 
+No R, utilizaremos a função geom_histogram para fazer esse histograma.
+Podemos definir o número de classes que queremos no nosso gráfico. Abaixo seguem dois exemplos, o primeiro não definindo a largura e o segundo definindo a largura como 10
+```{r}
+p_6 <- ggplot(midwest, aes(x=area))
+p_6 + geom_histogram() + theme_bw() + labs(x = "Densidade", y = "Área")
+p_6 + geom_histogram(bins = 10) + theme_bw() + labs(x = "Densidade", y = "Área")
+```
+
+Podemos juntar histogramas também, concatenando algumas strings
+```{r}
+oh_wi <- c("OH", "WI")
+p_7 <- ggplot(data = subset(midwest, 
+                            subset = state %in% oh_wi), 
+              mapping = aes(x = percollege, 
+                            fill = state))
+p_7 + 
+  geom_histogram(alpha = 0.4, bins = 20) + 
+  scale_fill_manual(values = c("red", "blue"))+
+  theme_bw() + 
+  labs(y = "Quantidade", x = "Colégio Eleitoral") +
+  theme(panel.grid = element_blank())
+  
+```
+
+Podemos também fazer um histograma para variáveis contínuas.
+```{r}
+p_8 <- ggplot(data = midwest,  mapping = aes(x= area))
+p_8 + geom_density() + theme_bw() + labs(x = "Densidade", y = "Área")
+```
+
+Mas podemos colocar cores nas coisas
+```{r}
+p_9 <- ggplot(data = midwest, mapping = aes(x = area, fill = state, color = state))
+p_9 + geom_density(alpha = 0.3) + theme_bw() + labs(x = "Densidade", y = "Área")
+```
+
+Mas note que muitas sobreposições fazem o nosso gráfico ficar muito poluído. Podemos filtrar assim um pouco da informação para deixar o gráfico um pouco mais apresentável.
+
+```{r}
+p_10 <- ggplot(data = subset(midwest, subset = state %in% oh_wi), 
+              mapping = aes(x = area, fill = state, color = state))
+p_10 + 
+  geom_density(alpha = 0.3, 
+               mapping = aes( y = after_stat(scaled))) + 
+  theme_bw() + 
+  labs(x = "Área", y = "Área proporcional") +
+  theme(panel.grid = element_blank())
+```
+
+# Evitando Transformações
+Note que quando usamos a função geom_bar, o ggplot automaticamente fez uma contagem. Mas e se não quisessemos fazer essa contagem?
+Caso nossa tabela já esteja formatada, podemos evitar essa contagem passando um argumento stat = 'identity', assim o R vai entender que os dados já estão pré processados.
+```{r}
+p_11 <- ggplot(titanic, mapping = aes( x = fate, y = percent, fill = sex))
+p_11 + 
+  geom_bar(position = "dodge", 
+           stat = "identity") + 
+  theme(legend.position = "top") + 
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  labs(x = "Destino", y = "Porcentagem") +
+  scale_fill_manual(values = c("red", "blue"))
+```
+
+Com essa função, como não fazemos nenhum cálculo, podemos plotar algumas coisas interessantes, como por exemplo, colorir valores positivos com uma cor, e negativos com outro
+
+```{r warning=FALSE}
+p_12 <- ggplot(data = oecd_sum, 
+               mapping = aes(x = year, 
+                             y = diff, 
+                             fill = hi_lo))
+p_12 + geom_col() +
+  guides(fill = "none") +
+  labs( x = NULL, y = "Diferença em anos",
+        title = "A diferença de expectativa de vida entre os EUA e a OCDE",
+        subtitle = "Diferença entre a expectativa de vida dos EUA e da OCDE", 
+        caption = "Dados: OCDE. Baseado num gráfico de Cristopher Ingraham, 
+        Washington Post, 27 de dezembro 2017.") +
+  theme_bw() +
+  theme(panel.grid = element_blank(), 
+        plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5)) +
+  labs(x = "Anos") +
+  scale_fill_manual(values = c("red", "blue"))
+```
+
+
+

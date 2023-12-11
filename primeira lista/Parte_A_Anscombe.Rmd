@@ -1,0 +1,113 @@
+---
+title: "Anscombe_quartet"
+output: 
+  html_document:
+    number_sections: yes
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE, warnings=FALSE)
+
+```
+
+# Quarteto de anscombe
+
+Primeiramente, para iniciarmos nossa ambientação em R, devemos começar adicionando e abrindo as bibliotecas que usaremos, as quais são: datasets e tidyverse. Dentro do biblioteca do Tidyverse, usaremos em específico o pacote do ggplot2, assim, abriremos apenas ele. È imporatante ressaltar que o ggplot é a farramenta que irá nos facilitar visualizar os dados, e o pacote datasets importante a tabela como os dados do quarteto de Anscombe. Para isso, usaremos os seguintes comandos:
+
+```{r}
+#install.packages("tidyverse")
+#install.packages("datasets")
+#install.packages("gridExtra")
+library(ggplot2)
+library(datasets)
+library(gridExtra)
+```
+
+## Visulizando a tabela
+
+Para plotarmos a tabela com o quarteto de Anscombe para visualizar os valores da tabela, utilizaremos:
+
+```{r}
+datasets:: anscombe
+```
+
+## Criando o primeiro gráfico
+
+Para criar o primeiro gráfico, utilizaremos comandos presentes no R e então atribuiremos esse gráfico a uma variavél, que no caso é a variavél graf_1. Utilizaremos a função ggplot() Para isso, utilizaremos de alguns passos, tais como: - A função `ggplot(data = anscombe, mapping = aes(x1, y1))`, para inserirmos a base de dados (anscombe) e as variáveis que vamos querer trabalhar - `geom_point(color = "blue", size = 2)` vai plotar o gráfico e dizer a cor e o tamanho dos pontos do gráfico de dispersão. - `scale_x_continuous(breaks = seq(0,20,2))` vai setar o nosso intervalo de "grid" para colocar linhas a cada duas unidades do gráfico no eixo x, até x=20 - `scale_y_continuous(breaks = seq(0,14,2))` vai setar o nosso intervalo de "grid" para colocar linhas a cada duas unidades do gráfico no eixo y, até y=14 - `expand_limits(x=0, y=0)`, vai fazer o gráfico começar do x=0 e y=0 - `labs(x="x_1", y="y_1", title = "Gráfico 1")`, vai definir os rótulos dos eixos, além do título do gráfico. - `theme_bw()`, vai nos dar o "tema" do gráfico. Ficamos assim com:
+
+```{r}
+graf_1 <- ggplot(data = anscombe, mapping = aes(x=x1, y=y1)) + 
+  scale_x_continuous(breaks = seq(0,20,2)) + 
+  scale_y_continuous(breaks = seq(0,14,2)) + 
+  expand_limits(x=0, y=0) + 
+  labs(x="x_1", y="y_1", title = "Gráfico 1") + 
+  geom_point(color = "blue", size = 1) + 
+  theme_bw()
+graf_1
+```
+
+## Criando os outros três gráficos
+
+Faremos os outros três gráficos análogo ao item anterior, apenas trocando as colunas e os nomes dos eixos:
+
+```{r}
+graf_2 <- ggplot(data = anscombe, mapping = aes(x=x2, y=y2)) +  
+  scale_x_continuous(breaks = seq(0,20,2)) +
+  scale_y_continuous(breaks = seq(0,14,2)) +
+  expand_limits(x=0, y=0) +
+  labs(x="x_2", y="y_2", title = "Gráfico 2") +
+  geom_point(color = "blue", size = 1) + 
+  theme_bw()
+graf_2
+```
+
+Gráfico 3
+
+```{r}
+graf_3 <- ggplot(data = anscombe, mapping = aes(x=x3, y=y3)) +    scale_x_continuous(breaks = seq(0,20,2)) +    scale_y_continuous(breaks = seq(0,14,2)) +    expand_limits(x=0, y=0) +    labs(x="x_3", y="y_3", title = "Gráfico 3") +    geom_point(color = "blue", size = 1) + theme_bw()
+graf_3
+```
+
+Gráfico 4
+
+```{r}
+graf_4 <- ggplot(data = anscombe, mapping = aes(x=x4, y=y4)) +    scale_x_continuous(breaks = seq(0,20,2)) +    scale_y_continuous(breaks = seq(0,14,2)) +    expand_limits(x=0, y=0) +    labs(x="x_4", y="y_4", title = "Gráfico 4") +    geom_point(color = "blue", size = 1) + theme_bw()
+graf_4
+```
+
+## Adicionando regressão linear
+
+Apesar de nossa visualização estar boa, podemos melhorá-la adicionando as retas de regressão linear, para isso, utilizaremos a função lm para nos retornar a reta que melhor se ajusta:
+
+```{r}
+lm_1 <- lm(y1~x1, data = anscombe)
+lm_2 <- lm(y2~x2, data = anscombe)
+lm_3 <- lm(y3~x3, data = anscombe)
+lm_4 <- lm(y4~x4, data = anscombe)
+```
+
+A partir de agora os coeficientes das retas já estão armazenados, nas variáveis, e agora fica fácil de acessa-los. Por fim, basta plotar a linha no gráfico.
+
+```{r}
+graf_1_reta <- graf_1 + geom_abline(intercept = coef(lm_1)[1], slope = coef(lm_1)[2], color = "red")
+graf_2_reta <- graf_2 + geom_abline(intercept = coef(lm_2)[1], slope = coef(lm_2)[2], color = "red")
+graf_3_reta <- graf_3 + geom_abline(intercept = coef(lm_3)[1], slope = coef(lm_3)[2], color = "red")
+graf_4_reta <- graf_4 + geom_abline(intercept = coef(lm_4)[1], slope = coef(lm_4)[2], color = "red")
+```
+
+## Juntando os quatro gráficos
+
+Para juntar os quatro gráficos, vamos utilizar a função grid.arrange a qual vai juntar os quatro gráficos produzidos numa imagem só. Para isso utilizaremos:
+
+```{r}
+grid.arrange(grobs = list(graf_1_reta, graf_2_reta, graf_3_reta, graf_4_reta), ncol(2), top = "Quarteto de Anscombe")
+```
+
+Temos assim uma visualização do quarteto de anscombe.

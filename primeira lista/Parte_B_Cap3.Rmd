@@ -1,0 +1,236 @@
+---
+title: "Tarefa_B"
+output:  
+  html_document:
+    number_sections: yes
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message=FALSE, 
+                      warnings=FALSE)
+
+```
+
+# Setando o RStudio
+```{r}
+library(ggplot2)
+library(gapminder)
+library(socviz)
+```
+
+# Gráfico a partir do GapMinder
+## Gráfico Simples
+Vamos tirar os dados do gap minder, para fazer uma visualização do PIB per capita de um país por sua expectativa de vida.
+Vamos começar apenas com os argumentos mais básicos possíveis, vamos definir as variáveis e plota-las.
+```{r}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x=gdpPercap, 
+                          y= lifeExp))
+p + 
+  geom_point(color = "darkblue") + 
+  theme_light()
+```
+
+## Linha de tendência
+Note que essa visualização nos dá os pontos presentes no gráfico, no entanto, qual a linha de tendência desses pontos?
+
+Para isso utilizaremos a função geom_smooth
+```{r}
+p + 
+  geom_smooth(color = "red", 
+                fill = "#ffa590") + 
+  theme_light()
+```
+
+## Combinando gráfico e linha de tendência
+Podemos plotar os dois dados juntos:
+
+```{r}
+p + 
+  geom_point() + 
+  geom_point(color = "darkblue") + 
+  geom_smooth(color = "red", 
+              fill = "#ffa590") + 
+  theme_light()
+```
+
+Note no entanto que essa linha não tem um formato muito bem definido, vamos então tentar aplicar a reta que melhor se encaixa nos pontos apresentas, colocando o argumento "lm" na função apresentada.
+```{r}
+p + geom_point() + 
+  geom_point(color = "darkblue") + 
+  geom_smooth(method= lm, 
+              color = "red", 
+              fill = "#ffa590") + 
+  theme_light()
+
+```
+
+Note que claramente nosso modelo não é linear, pois para valores muito grandes, a reta fica muito longe dos dados apresentados. Sendo assim, como podemos melhorar nossa visualização?
+
+# Mudando a escala dos eixos
+A resposta é simples, basta notarmos que a riqueza não é dividida igualmente, e que é muito mais comum países com baixos gdp per capita. Sendo assim, vamos deixar nossos dados no eixo x na escala logarítimica.
+
+```{r}
+p+ 
+  geom_point(color = "darkblue") + 
+  geom_smooth(method = "lm", 
+              color = "red") + 
+  scale_x_log10() + 
+  theme_light()
+```
+
+Vamos agora deixar a escala com os valores em dólares.
+
+```{r}
+p + 
+  geom_point(color = "darkblue", 
+              alpha = 0.4) + 
+  geom_smooth(method = "lm", 
+              color = "red", 
+              se = FALSE) + 
+  scale_x_log10(labels = scales::dollar) + 
+  theme_light()
+
+```
+
+# Mudando variáveis dos pontos
+Vamos adicionar transparência ao gráfico com a função alpha. 
+```{r}
+p + 
+  geom_point(color = "darkblue", 
+             alpha = 0.3) + 
+  geom_smooth(color = "red", 
+              se = FALSE, 
+              linewidth=1, 
+              method = lm) + 
+  scale_x_log10(labels = scales::dollar) + 
+  theme_light()
+```
+
+## Overview
+O que fizemos foi armezenar as variáveis de onde iremos extrair os dados e os eixos x e y e colocamos todas na variável p. A variável alpha dentro de geom_point, seta o nível de transparência dos dados. Essa escala vai de 0 (invisível) até 1 (totalmente opaco).
+geom_smooth seta a linha de tendência do gráfico, color define a cor, linewidth a espessura da linha, se=FALSE tira a linha de erro, e method=lm define que o modelo usado para adaptar os dados seráuma reta de regressão. 
+scale_x_log10(labels = scales::dollar), define o eixo x como uma escala log 10 e labels define que a escala deve ser mostrada como valor em dolar.
+
+# Adicionando legendas
+Vamos adicionar algumas legendas nesse gráfico, além de um tema para deixá-lo com outra aparência. 
+```{r}
+p + 
+  geom_point(alpha = 0.3, color = "darkblue") + 
+  geom_smooth( method = "lm", se = FALSE, color = "red") + 
+  scale_x_log10(labels = scales::dollar) + 
+  labs(x = "GDP Per Capita", 
+       y = "Life expectancy In Years", 
+       title = "Economic Growth and Life Expectancy", 
+       subtitle = "Data points are country-years", 
+       caption = "Source GapMinder.") + 
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5))
+
+```
+
+Temos um gráfico relativamente polido, com apenas alguns comandos em R.
+
+# Agrupando os dados
+Note que podemos agrupar os dados em conjuntos menores, mas mais parecidos, tais como agrupar os dados pelo continente. Para isso, famos adicionar uma variavel color = continent no aesthetics do ggplot.
+Vamos adicionar algumas legendas nesse gráfico também.
+```{r}
+cb_pallete <- c("#10E61B", "#0587FC", "#D813F5", "#F22205", "#FCC705" )
+
+p <- ggplot(data = gapminder, mapping = aes(x=gdpPercap, y=lifeExp, color = continent))
+
+p + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth(method = "loess") + 
+  scale_x_log10(labels = scales::dollar) + 
+  scale_color_manual(values = cb_pallete) + 
+  labs(x = "GDP Per Capita", y = "Life expectancy In Years", 
+       title = "Economic Growth and Life Expectancy", 
+       subtitle = "Data points are country-years", 
+       caption = "Source GapMinder.") + 
+  theme_bw() + 
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5))
+
+```
+Caso quisessemos colorir a linha de erro, colocaríamos a variável fill no ambiente aesthictics, pois ela controla qual a cor será preenchida a barra de erro.
+```{r}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x=gdpPercap, 
+                          y= lifeExp, 
+                          color = continent, 
+                          fill = continent))
+
+p + 
+  geom_point(alpha = 0.3) + 
+  geom_smooth( method = "loess") + 
+  scale_x_log10(labels = scales::dollar) + 
+  labs(x = "GDP Per Capita", 
+       y = "Life expectancy In Years", 
+       title = "Economic Growth and Life Expectancy", 
+       subtitle = "Data points are country-years", 
+       caption = "Source GapMinder.") +
+  scale_color_manual(values = cb_pallete) +
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_color_manual(values = cb_pallete)
+
+```
+Note agora que todas as linhas tem suas linhas e barras de erro. No entanto, vemos que isso deixa o gráfico meio poluido, algo que não queremos. Como podemos fazer para plotar apenas uma linha de erro, mas manter as cores diferentes para cada conjunto de dados?
+
+#deixando o gráfico menos poluído
+A reposta é simples: basta definir a variável mapping pela função geom_point. Caso definissemos pela função aes() essa os dados seriam carregados por todo o "código" para plotar o gráfico. No entanto, quando definimos pela função geom_point, ela só vai carragar esses dados na hora que estiver criando os pontos, e quando aplicarmos a função geom_smooth, essa variável não vai ser carregada. O código ficaria assim:
+```{r}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x=gdpPercap, 
+                          y= lifeExp))
+p + 
+  geom_point(mapping = aes(color = continent, 
+                           fill = continent)) + 
+  geom_smooth( method = "loess",
+               color = "black") + 
+  scale_x_log10(labels = scales::dollar) + 
+  labs(x = "GDP Per Capita", 
+       y = "Life expectancy In Years", 
+       title = "Economic Growth and Life Expectancy", 
+       subtitle = "Data points are country-years", 
+       caption = "Source GapMinder.") +
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_color_manual(values = cb_pallete)
+
+```
+
+# Adicionando gradientes
+Podemos ter também um gradiente logarítimico, apenas adicionando uma variável log na hora de mapear o geom_point. Podemos ver isso por exemplo, adicionando uma variável de cor no geom_point para o log da população.
+```{r}
+p <- ggplot(data = gapminder, 
+            mapping = aes(x=gdpPercap, 
+                          y= lifeExp))
+p + 
+  geom_point(mapping = aes(color = log(pop))) + 
+  geom_smooth( method = "loess",
+               color = "black") + 
+  scale_x_log10(labels = scales::dollar) + 
+  labs(x = "GDP Per Capita", 
+       y = "Life expectancy In Years", 
+       title = "Economic Growth and Life Expectancy", 
+       subtitle = "Data points are country-years", 
+       caption = "Source GapMinder.") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+Desse modo, vemos como o R pode ser diverso, e como podemos personalizar esse ambiente para realizar os gráficos dos mais variados tipos.
