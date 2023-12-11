@@ -37,6 +37,40 @@ Para plotarmos a tabela com o quarteto de Anscombe para visualizar os valores da
 ```{r}
 datasets:: anscombe
 ```
+Vamos ver o que acontece com a média de x, com a variância de x em cada um dos casos
+```{r}
+mean(anscombe$x1)
+mean(anscombe$x2)
+mean(anscombe$x3)
+mean(anscombe$x4)
+sd(anscombe$x1)
+sd(anscombe$x2)
+sd(anscombe$x3)
+sd(anscombe$x4)
+```
+Note que a média de X e que o desvio padrão de X é o mesmo. Vamos ver se isso vale também para o eixo y?
+```{r}
+mean(anscombe$y1)
+mean(anscombe$y2)
+mean(anscombe$y3)
+mean(anscombe$y4)
+sd(anscombe$y1)
+sd(anscombe$y2)
+sd(anscombe$y3)
+sd(anscombe$y4)
+```
+São todos aproximadamente o mesmo. 
+Podemos calcular também a correlação entre x e y, em cada um dos gráficos, temos assim:
+```{r}
+cor(anscombe$x1, anscombe$y1)
+cor(anscombe$x2, anscombe$y2)
+cor(anscombe$x3, anscombe$y3)
+cor(anscombe$x4, anscombe$y4)
+```
+
+A correlação deles também é igual!
+Utilizando apenas esses gráficos, podemos pensar que como essas medidas de resumo são muito parecidas, seus gráficos tendem a ser ao menos parecidos. Será que isso é verdade? 
+Vamos descobrir isso com o visualização do quarteto presente nesse trabalho.
 
 ## Criando o primeiro gráfico
 
@@ -111,3 +145,4 @@ grid.arrange(grobs = list(graf_1_reta, graf_2_reta, graf_3_reta, graf_4_reta), n
 ```
 
 Temos assim uma visualização do quarteto de anscombe.
+Essa visualiação contraria nossa teoria inicial de que como as medidas de resumo são parecidas, seus gráficos tendem a ser parecidos. Concluimos assim que sempre há perda de informção quando medidas de resumo são apresentadas e uma visualização sempre é importante para entender a totalidade dos dados apresentados.

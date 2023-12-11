@@ -1,6 +1,16 @@
 ---
 title: "Parte C"
-output: html_document
+output: 
+  html_document:
+    number_sections: yes
+    highlight: tango
+    theme: cerulean
+    toc: yes
+    toc_float:
+      collapsed: yes
+      smmoth_scroll: no
+  pdf_document:
+    toc: yes
 ---
 
 ```{r setup, echo=FALSE}
@@ -8,25 +18,31 @@ knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(message=FALSE, warnings=FALSE)
 ```
 
+# Setando o RStudio
 Vamos começar abrindo as bibliotecaas necessárias, além de baixar os dados do github do gráfico
 
-```{r}
+```{r message=FALSE, warning=FALSE}
+if(!require(gridExtra)) install.packages("gridExtra")
+if(!require(tidyverse)) install.packages("tidyverse") 
+if(!require(lubridate)) install.packages("lubridate") 
+if(!require(ggrepel)) install.packages("ggrepel") 
+if(!require(pander)) install.packages("pander") 
+if(!require(ggmap)) install.packages("ggmap")
+if(!require(grid)) install.packages("grid")
 library(tidyverse)
-library(lubridate)
 library(lubridate)
 library(ggmap)
 library(ggrepel)
 library(gridExtra)
 library(pander)
-#Há uma sobreposição de funções, mas como não iremos utiliza-las, vamos ignorar
+library(grid)
 ```
 
-É importante, para o próximo passo setar o seu workingspace para que os arquivos sejam lidos corretamente
+# Definindo os dados em variáveis
 
 Vamos atribuir os dados em algumas variáveis, para ser mais fácil trabalhar com elas depois
 
 ```{r}
-setwd("C:/Users/kauan/OneDrive - Fundacao Getulio Vargas - FGV/Matérias/AEDV/Lista_segundo_semestre")
 cities <- read.table("fancy-minard-master/input/minard/cities.txt", 
                      header = TRUE, 
                      stringsAsFactors = FALSE)
@@ -40,13 +56,14 @@ temps <- read.table("fancy-minard-master/input/minard/temps.txt",
 troops %>% head() %>% pandoc.table()
 ```
 
+# Plotando o gráfico da invasão
 Vamos agora plotar o gráfico de acordo com a latitude pela distância.
 
 ```{r}
 ggplot(data = troops, mapping = aes(x = long, y = lat, group = group)) + geom_path()
 ```
 
-temos já um gráfico bem decente sobre como foi o caminho dessas tropas, no entanto, podemos enriquece-lo ainda mais, adicionando como variáveis a direção:
+Temos já um gráfico bem decente sobre como foi o caminho dessas tropas, no entanto, podemos enriquece-lo ainda mais, adicionando como variáveis a direção:
 
 ```{r}
 ggplot(data = troops, mapping = aes(x = long, y = lat, 
@@ -60,7 +77,7 @@ Agora que ja temos nosso gráfico vamos adicionar algumas modificações para de
 graf_1 <- ggplot(data = troops, mapping = aes(x = long, y = lat, group = group, color=direction, linewidth = survivors)) + 
   geom_path(lineend = "round") +
   scale_size(range = c(0.5,5)) + 
-  scale_color_manual(values = c("#DFC17E", "#252523")) +
+  scale_color_manual(values = c("#08995B", "#A900E6")) +
   labs(x = NULL, y = NULL) +
   guides(color = "none")
 graf_1
@@ -78,24 +95,24 @@ ggplot() +
                           linewidth = survivors, 
                           ), lineend = "round") +
   geom_point(data = cities, mapping = aes(x = long, y = lat)) +
-  geom_text_repel(data = cities, mapping = aes(x = long, y = lat, label = city), color = "red", family = "sans") +
+  geom_text_repel(data = cities, mapping = aes(x = long, y = lat, label = city), color = "black", family = "sans") +
   scale_size(range = c(0.5,5)) + 
-  scale_color_manual(values = c("#DFC17E", "#252523")) +
+  scale_color_manual(values = c("#08995B", "#A900E6")) +
   labs(x = NULL, y = NULL) +
   guides(color = "none")
 ```
 
-Vamos dar o próximo passo em nossa visualizção que será colocar o fundo de um mapa atrás de nosso gráfico. Para isso usaremos a biblioteca do ggmap.
+Vamos dar o próximo passo em nossa visualizção, o qual será colocar o fundo de um mapa atrás de nosso gráfico. Para isso usaremos a biblioteca ggmap.
 
 ```{r}
-march.1812.europe <- c(left = 20.039, top = 56.656, right = 39.507, bottom = 52.324)
+march.1812.europe <- c(left = 23.039, top = 56.656, right = 38.507, bottom = 53.324)
 
 march.1812.europe.map <- get_stamenmap(bbox = march.1812.europe, zoom = 5, maptype = "toner-background", where = "cache")
 ggmap(march.1812.europe.map)
 
 ```
 
-Para melhorar nossa visualização vamos juntar o gráfico do minard com o fundo de mapa, pois assim vamos ter uma visualização ainda melhor e mais precisa dos nossos dados. Vamos retirar as legendas, e adicionar um título para dar uma referência para nosso gráfico.
+Para melhorar nossa visualização, vamos juntar o gráfico do minard com o fundo de mapa, pois assim vamos ter uma visualização ainda melhor e mais precisa dos nossos dados.
 
 ```{r warning=FALSE}
 march.1812.plot <- ggmap(march.1812.europe.map) +
@@ -107,22 +124,100 @@ march.1812.plot <- ggmap(march.1812.europe.map) +
                           linewidth = survivors), 
             lineend = "round") +
   scale_color_manual(values = c("#08995B", "#A900E6")) +
-  geom_point(data = cities, mapping = aes(x = long, y = lat)) +
-  geom_text_repel(data = cities, mapping = aes(x = long, y = lat, label = city), color = "black", family = "sans") +
+  geom_point(data = cities, mapping = aes(x = long, y = lat), color = "black") +
+  geom_text_repel(data = cities, mapping = aes(x = long, y = lat, label = city), color = "black") +
   scale_size(range = c(0.5,4)) +
-  guides(color = "none", size = "none") +
+  guides(color = "none", size = "none")
+march.1812.plot
+```
+(Usei as mesmas variáveis que ele até aqui pois passei muita dificuldade quando fui refazer com outras variáveis, então preferi utilizar as mesmas que ele, para garantir que estava tudo certo)
+Note que o gráfico está muito bom, e bem informativo, no entanto, podemos tirar alguns elementos, como os eixos x e y e legenda do gráfico e adicionar um título e uma subtítulo para o gráfico.
+```{r warning=FALSE}
+invasao_1812 <- march.1812.plot +
   labs(title = "Marcha das tropas de Napoleão à Russia", 
        subtitle = "Este gráfico mostra como a grande armada de Napoleão foi quase 
-       exterminada em sua tentativa de invadir a Rússia") +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold"), 
-        plot.subtitle = element_text(hjust = 0.5),
+       exterminada em sua tentativa de invadir a Rússia")+
+  theme_light() +
+  theme(panel.grid = element_blank(), 
+        axis.title = element_blank(), 
+        axis.ticks = element_blank(), 
         axis.text = element_blank(), 
-        axis.title = element_blank(),
-        plot.background = element_rect(fill = "white"))
-march.1812.plot
+        legend.position = "none",  
+        panel.border = element_blank(), 
+        plot.title = element_text(hjust = 0.5, face = "bold"), 
+        plot.subtitle = element_text(hjust = 0.5))
+invasao_1812
 ```
 
 Temos assim um mapa com as fronteiras atuais de como se deu a invasão de Napoleão a Russia, bem como os nomes das cidades que existiam na época e sua respectiva localização no mapa.
 
 
+# Avaliando a temperatura
 
+```{r}
+p_temp <- ggplot(data = temps,
+                 mapping = aes(x = long, y = temp))
+p_temp +geom_line() + geom_text(aes(label = temp), vjust = 1.5) 
+
+```
+
+Vamos agora, reproduzir o gráfico. Primeiramente vamos colocar os dados de uma maneira mais agradável de se trabalhar
+
+```{r}
+temps.nice <- temps %>% mutate(nice.label = paste0(temp, "°, ", month, ". ", day))
+
+```
+
+Por fim vamos adicionar camadas ao gráfico da temperatura de modo a deixa-lo visualmente bonito, vamos adicionar os limites do gráfico. 
+(Nessa parte, eu tentei usar o comando proposto pelo autor,
+(ggplot_build(march.1812.plot)\$layout\$panel_ranges[[1]]$x.range) 
+no entanto, não consegui faze-lo funcionar de jeito nenhum, pois a função só me retornava NULL. Após passar muita raiva, decidir colocar os limites para as coordenadas de X "na mão")
+
+```{r}
+#c(left = 23.039, top = 56.656, right = 38.507, bottom = 53.324)
+temperaturas <-  ggplot(data = temps.nice, mapping = aes(x=long, y= temp)) +
+  geom_line() +
+  geom_label(mapping = aes(label = nice.label), size = 2.2) +
+  labs(x = NULL, y = "°C") +
+  scale_x_continuous(limits = c(25.0, 38.5)) +
+  scale_y_continuous(position = "right") +
+  coord_cartesian(ylim = c(-35,5)) +
+  theme_light() +
+  theme(panel.grid.major.x = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        axis.text.x = element_blank(), 
+        axis.ticks = element_blank(),
+        panel.border = element_blank())
+temperaturas
+
+```
+
+# Combinando os gráficos
+Vamos utilizar a função rbind presente na biblioteca gridExtra para juntar os dois gráficos mantendo a mesma longitude nos eixos.
+```{r message=FALSE, warning=FALSE}
+plot.both <- rbind(ggplotGrob(invasao_1812),
+                   ggplotGrob(temperaturas))
+
+grid::grid.newpage()
+grid::grid.draw(plot.both)
+```
+
+No entanto, note que os gráficos estão desproporcionais e não estão ocupando todo o espaço, vamos ajeitar isso, setando as variáveis
+```{r}
+
+panels <- plot.both$layout$t[grep("panel", plot.both$layout$name)]
+map.panel.height <- plot.both$heights[panels][1]
+
+map.panel.height
+```
+```{r}
+x <- unlist(map.panel.height)
+plot.both$heights[panels] <- unit(c(x[1], 0.3), "null")
+
+
+grid.newpage()
+grid.draw(plot.both)
+```
+
+Conseguimos assim, realizar um gráfico muito representativo no R, usando desde de funções simples até funções muito complexas, as quais permitiram mostrar como o R pode ser muito importante para se trabalhar com gráficos.
